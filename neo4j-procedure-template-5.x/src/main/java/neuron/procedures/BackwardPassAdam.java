@@ -28,7 +28,7 @@ public class BackwardPassAdam {
                                             @Name("beta1") Double beta1,
                                             @Name("beta2") Double beta2,
                                             @Name("epsilon") Double epsilon,
-                                            @Name("iteration") Integer t) {
+                                            @Name("iteration") Long t) {
 
         try (Transaction tx = db.beginTx()) {
 
@@ -84,7 +84,7 @@ public class BackwardPassAdam {
                                             @Name("beta1") Double beta1,
                                             @Name("beta2") Double beta2,
                                             @Name("epsilon") Double epsilon,
-                                            @Name("iteration") Integer t) {
+                                            @Name("iteration") Long t) {
 
         try (Transaction tx = db.beginTx()) {
 
