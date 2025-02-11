@@ -78,13 +78,13 @@ public class CreateOutputsRow {
             log.info(String.format("New Connexion successfuly established " +
                     "from Neuron: %s to Output: %s",from_id,to_id));
 
-            return Stream.of(new CreateResult("ok"));
+            return Stream.of(new CreateResult("Success :)"));
 
         } catch (Exception e) {
 
             log.error("Error creating Connexion:" + e.getMessage());
 
-            return Stream.of(new CreateResult("ko"));
+            return Stream.of(new CreateResult("Failure :("));
         }
     }
 

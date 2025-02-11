@@ -39,13 +39,13 @@ public class CreateInputsRow {
             log.info(String.format("New Row with id: %s was created ! ",
                                     id));
 
-            return Stream.of(new CreateResult("ok"));
+            return Stream.of(new CreateResult("Success :)"));
 
         } catch (Exception e) {
 
             log.error("Error creating Row:" + e.getMessage());
 
-            return Stream.of(new CreateResult("ko" + e.getMessage()));
+            return Stream.of(new CreateResult("Failure :(" + e.getMessage()));
         }
     }
 
@@ -79,13 +79,13 @@ public class CreateInputsRow {
             log.info(String.format("New Connexion successfuly established " +
                         "from inputRow: %s to Neuron: %s",from_id,to_id));
 
-            return Stream.of(new CreateResult("ok"));
+            return Stream.of(new CreateResult("Success :)"));
 
         } catch (Exception e) {
 
             log.error("Error creating Connexion:" + e.getMessage());
 
-            return Stream.of(new CreateResult("ko"));
+            return Stream.of(new CreateResult("Failure :)"));
         }
     }
 

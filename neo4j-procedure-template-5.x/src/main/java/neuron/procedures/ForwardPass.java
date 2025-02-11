@@ -77,13 +77,13 @@ public class ForwardPass {
 
             log.info(String.format("Query successfuly executed!"));
 
-            return Stream.of(new CreateResult("ok"));
+            return Stream.of(new CreateResult("Success :)"));
 
         } catch (Exception e) {
 
             log.error("Error executing:" + e.getMessage());
 
-            return Stream.of(new CreateResult("ko" + e.getMessage()));
+            return Stream.of(new CreateResult("Failure :(" + e.getMessage()));
         }
     }
 

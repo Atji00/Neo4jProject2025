@@ -21,10 +21,10 @@ public class CreateNeuron {
     @Procedure(name = "nn.createNeuron",mode = Mode.WRITE)
     @Description("")
     public Stream<CreateResult> createNeuron(@Name("id") String id,
-                                       @Name("layer") String layer,
-                                       @Name("type") String type,
-                                       @Name("activation_function") String activation_function
-    ) {
+                                             @Name("layer") String layer,
+                                             @Name("type") String type,
+                                             @Name("activation_function") String activation_function) {
+
         try (Transaction tx = db.beginTx()) {
 
           tx.execute("CREATE (n:Neuron {\n" +
@@ -38,11 +38,11 @@ public class CreateNeuron {
                     "activation_function:'" + activation_function + "'\n" +
                     "})");
             tx.commit();
-            return Stream.of(new CreateResult("ok"));
+            return Stream.of(new CreateResult("Success :)"));
 
         } catch (Exception e) {
 
-            return Stream.of(new CreateResult("ko"));
+            return Stream.of(new CreateResult("Failure :("));
         }
     }
     @Procedure(name = "nn.createRelationShipsNeuron",mode = Mode.WRITE)
@@ -60,11 +60,11 @@ public class CreateNeuron {
             "CREATE (n1)-[:CONNECTED_TO {weight:" + weight + "}]->(n2)"
             );
             tx.commit();
-            return Stream.of(new CreateResult("ok"));
+            return Stream.of(new CreateResult("Success :)"));
 
         } catch (Exception e) {
 
-            return Stream.of(new CreateResult("ko"));
+            return Stream.of(new CreateResult("Failure :("));
         }
     }
     public static class CreateResult {
