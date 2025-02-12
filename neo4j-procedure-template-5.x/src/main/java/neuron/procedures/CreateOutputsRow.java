@@ -27,9 +27,10 @@ public class CreateOutputsRow {
 
         try (Transaction tx = db.beginTx()) {
 
-            String creating_query = "CREATE (n:Row{id: $id,\n" +
-                                                  "type: outputsRow" +
-                                            "})";
+            String creating_query = """
+                                        CREATE (n:Row {id: $id,
+                                                       type: 'outputsRow'})
+                                    """;
 
             tx.execute(creating_query, Map.of("id",id)
             );
@@ -63,9 +64,11 @@ public class CreateOutputsRow {
                             }
         try (Transaction tx = db.beginTx()) {
 
-            String connexion_query = "MATCH (n1:Neuron {id: $from_id,type:'output'})\n" +
-                                     "MATCH (n2:Row {{id: $to_id,type:'outputsRow'}})\n" +
-                                     "CREATE (n1)-[:CONTAINS {output: $value,id:$outputbyrowid}]->(n2)";
+            String connexion_query = """
+                                         MATCH (n1:Neuron {{id: $from_id,type:'output'}})
+                                         MATCH (n2:Row {{id: $to_id,type:'outputsRow'}})
+                                         CREATE (n1)-[:CONTAINS {output: $value,id:$outputbyrowid}]->(n2)
+                                     """;
 
             tx.execute(connexion_query, Map.of("from_id", from_id,
                                                "to_id", to_id,

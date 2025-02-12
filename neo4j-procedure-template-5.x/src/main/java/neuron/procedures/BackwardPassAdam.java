@@ -54,19 +54,21 @@ public class BackwardPassAdam {
                     SET n.bias = n.bias - $learning_rate * (n.m_bias / (1 - ($beta1 ^ t))) / 
                                  (SQRT(n.v_bias / (1 - ($beta2 ^ t))) + $epsilon)
                     SET n.gradient = gradient
+                    RETURN *
                     """;
-            tx.execute(query, Map.of("learning_rate", learning_rate,
+            Result queryresult = tx.execute(query, Map.of("learning_rate", learning_rate,
                                      "beta1", beta1,
                                      "beta2", beta2,
                                      "epsilon", epsilon,
                                      "t",t)
                       );
-
+            Stream<CreateResult> Stream_output = queryresult.stream()
+                                                            .map(row-> new CreateResult(row.toString()));
             tx.commit();
 
             log.info("Backward Pass Adam Step One completed successfully !");
 
-            return Stream.of(new CreateResult("Success :)"));
+            return Stream_output;
 
         } catch (Exception e) {
 
@@ -110,19 +112,22 @@ public class BackwardPassAdam {
                     SET n.bias = n.bias - $learning_rate * (n.m_bias / (1 - ($beta1 ^ t))) / 
                                  (SQRT(n.v_bias / (1 - ($beta2 ^ t))) + $epsilon)
                     SET n.gradient = gradient
+                    RETURN *
                     """;
-            tx.execute(query, Map.of("learning_rate", learning_rate,
+            Result query_result = tx.execute(query, Map.of("learning_rate", learning_rate,
                                      "beta1", beta1,
                                      "beta2", beta2,
                                      "epsilon", epsilon,
                                      "t",t)
                         );
+            Stream<CreateResult> Stream_output = query_result.stream()
+                                                             .map(element->new CreateResult(element.toString()));
 
             tx.commit();
 
             log.info("Backward Pass Adam Step Two completed successfully !");
 
-            return Stream.of(new CreateResult("Success :)"));
+            return Stream_output;
 
         } catch (Exception e) {
 
