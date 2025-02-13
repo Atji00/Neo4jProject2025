@@ -115,10 +115,10 @@ public class BackwardPassAdam {
                     RETURN *
                     """;
             Result query_result = tx.execute(query, Map.of("learning_rate", learning_rate,
-                                     "beta1", beta1,
-                                     "beta2", beta2,
-                                     "epsilon", epsilon,
-                                     "t",t)
+                                                           "beta1", beta1,
+                                                           "beta2", beta2,
+                                                           "epsilon", epsilon,
+                                                           "t",t)
                         );
             Stream<CreateResult> Stream_output = query_result.stream()
                                                              .map(element->new CreateResult(element.toString()));
