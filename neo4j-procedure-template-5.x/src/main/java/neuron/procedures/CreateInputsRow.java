@@ -1,6 +1,5 @@
 package neuron.procedures;
 
-import org.eclipse.jetty.util.Index;
 import org.neo4j.graphdb.*;
 import org.neo4j.logging.Log;
 import org.neo4j.procedure.*;
@@ -30,23 +29,26 @@ public class CreateInputsRow {
             String creating_query = """
                                         CREATE (n:Row {id: $id,
                                                         type: 'inputsRow'})
+                                        Return n
                                     """;
 
-            tx.execute(creating_query, Map.of("id",id)
-                      );
-
+            Result query_result = tx.execute(creating_query, Map.of("id",id)
+                                            );
+            Stream<CreateResult> streamout = query_result.stream()
+                                                         .map(element->new CreateResult(element.toString(),
+                                                                                                            null));
             tx.commit();
 
             log.info(String.format("New Row with id: %s was created ! ",
                                     id));
 
-            return Stream.of(new CreateResult("Success :)"));
+            return streamout;
 
         } catch (Exception e) {
 
             log.error("Error creating Row:" + e.getMessage());
 
-            return Stream.of(new CreateResult("Failure :(" + e.getMessage()));
+            return Stream.of(new CreateResult("Failure :(" + e.getMessage(),null));
         }
     }
 
@@ -69,35 +71,43 @@ public class CreateInputsRow {
                                         MATCH (n1:Row {id: $from_id,type:'inputsRow'})
                                         MATCH (n2:Neuron {id: $to_id,type:'input'})
                                         CREATE (n1)-[:CONTAINS {output: $value,id:$inputfeatureid}]->(n2)
+                                        RETURN n1, n2
                                     """;
 
-            tx.execute(connexion_query, Map.of("from_id", from_id,
+            Result query_result = tx.execute(connexion_query, Map.of("from_id", from_id,
                                                "to_id", to_id,
                                                "value", value,
                                                "inputfeatureid", inputfeatureid)
-                       );
+                                            );
+            Stream<CreateResult> streamout = query_result.stream()
+                                                         .map(x->new CreateResult(x.get("n1").toString(),
+                                                                                                    x.get("n2").toString()
+                                                                                                    )
+                                                             );
 
             tx.commit();
 
             log.info(String.format("New Connexion successfuly established " +
                         "from inputRow: %s to Neuron: %s",from_id,to_id));
 
-            return Stream.of(new CreateResult("Success :)"));
+            return streamout;
 
         } catch (Exception e) {
 
             log.error("Error creating Connexion:" + e.getMessage());
 
-            return Stream.of(new CreateResult("Failure :)"));
+            return Stream.of(new CreateResult("Failure :)", null));
         }
     }
 
     public static class CreateResult {
 
-        public final String result;
+        public final String result1;
+        public final String result2;
 
-        public CreateResult(String result) {
-            this.result = result;
+        public CreateResult(String result1, String result2) {
+            this.result1 = result1;
+            this.result2 = result2;
         }
     }
 

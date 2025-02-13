@@ -27,52 +27,64 @@ public class CreateNeuron {
 
         try (Transaction tx = db.beginTx()) {
 
-          tx.execute("CREATE (n:Neuron {\n" +
-                    "id: '" + id + "',\n" +
-                    "layer:" + layer + ",\n" +
-                    "type: '" + type + "',\n" +
-                    "bias: 0.0,\n" +
-                    "output: null,\n" +
-                    "m_bias: 0.0,\n" +
-                    "v_bias: 0.0,\n" +
-                    "activation_function:'" + activation_function + "'\n" +
-                    "})");
-            tx.commit();
-            return Stream.of(new CreateResult("Success :)"));
+          Result query_result = tx.execute("CREATE (n:Neuron {\n" +
+                                                "id: '" + id + "',\n" +
+                                                "layer:" + layer + ",\n" +
+                                                "type: '" + type + "',\n" +
+                                                "bias: 0.0,\n" +
+                                                "output: null,\n" +
+                                                "m_bias: 0.0,\n" +
+                                                "v_bias: 0.0,\n" +
+                                                "activation_function:'" + activation_function + "'\n" +
+                                                "})" +
+                                                "RETURN n");
+          Stream<CreateResult> streamout = query_result.stream()
+                                                       .map(x-> new CreateResult(x.get("n").toString(),
+                                                                                                    null)
+                                                            );
+          tx.commit();
+            return streamout;
 
         } catch (Exception e) {
 
-            return Stream.of(new CreateResult("Failure :("));
+            return Stream.of(new CreateResult("Failure :(", null));
         }
     }
     @Procedure(name = "nn.createRelationShipsNeuron",mode = Mode.WRITE)
     @Description("")
-    public Stream<CreateResult> createRelationShipsNeuron(
-            @Name("from_id") String from_id,
-            @Name("to_id") String to_id,
-             @Name("weight") String weight
-    ) {
+    public Stream<CreateResult> createRelationShipsNeuron(@Name("from_id") String from_id,
+                                                          @Name("to_id") String to_id,
+                                                          @Name("weight") String weight) {
         try (Transaction tx = db.beginTx()) {
 
-            tx.execute(
-            "MATCH (n1:Neuron" + "{id:'"+ from_id +"'})\n" +
-            "MATCH (n2:Neuron" + "{id:'"+ to_id +"'})\n" +
-            "CREATE (n1)-[:CONNECTED_TO {weight:" + weight + "}]->(n2)"
-            );
+            Result query_result = tx.execute(
+                                            "MATCH (n1:Neuron" + "{id:'"+ from_id +"'})\n" +
+                                               "MATCH (n2:Neuron" + "{id:'"+ to_id +"'})\n" +
+                                               "CREATE (n1)-[:CONNECTED_TO {weight:" + weight + "}]->(n2)" +
+                                               "Return n1, n2"
+                                            );
+            Stream<CreateResult> streamout = query_result.stream()
+                                                         .map(x->new CreateResult(x.get("n1").toString(),
+                                                                                                    x.get("n2").toString()
+                                                                                                    )
+                                                             );
             tx.commit();
-            return Stream.of(new CreateResult("Success :)"));
+            return streamout;
 
         } catch (Exception e) {
 
-            return Stream.of(new CreateResult("Failure :("));
+            return Stream.of(new CreateResult("Failure :(", null));
         }
     }
     public static class CreateResult {
 
-        public final String result;
+        public final String result1;
+        public final String result2;
 
-        public CreateResult(String result) {
-            this.result = result;
+        public CreateResult(String result1, String result2) {
+
+            this.result1 = result1;
+            this.result2 = result2;
         }
     }
 }

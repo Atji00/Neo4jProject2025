@@ -69,30 +69,42 @@ public class ForwardPass {
                         ELSE outputRow.output
                     END AS adjusted_output
                SET outputRow.output = adjusted_output
+               RETURN input, hidden, output
         """;
 
-            tx.execute(query);
+            Result query_result = tx.execute(query);
+            Stream<CreateResult> streamout = query_result.stream()
+                                                         .map(x->new CreateResult(x.get("input").toString(),
+                                                                                                    x.get("hidden").toString(),
+                                                                                                    x.get("output").toString()
+                                                                                                    )
+                                                             );
 
             tx.commit();
 
             log.info(String.format("Query successfuly executed!"));
 
-            return Stream.of(new CreateResult("Success :)"));
+            return streamout;
 
         } catch (Exception e) {
 
             log.error("Error executing:" + e.getMessage());
 
-            return Stream.of(new CreateResult("Failure :(" + e.getMessage()));
+            return Stream.of(new CreateResult("Failure :(" + e.getMessage(), null, null));
         }
     }
 
     public static class CreateResult {
 
-        public final String result;
+        public final String result1;
+        public final String result2;
+        public final String result3;
 
-        public CreateResult(String result) {
-            this.result = result;
+
+        public CreateResult(String result1,String result2,String result3) {
+            this.result1 = result1;
+            this.result2 = result2;
+            this.result3 = result3;
         }
     }
 }

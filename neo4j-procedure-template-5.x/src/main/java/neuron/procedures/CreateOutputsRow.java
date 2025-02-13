@@ -30,23 +30,27 @@ public class CreateOutputsRow {
             String creating_query = """
                                         CREATE (n:Row {id: $id,
                                                        type: 'outputsRow'})
+                                        RETURN n
                                     """;
 
-            tx.execute(creating_query, Map.of("id",id)
-            );
-
+            Result query_result = tx.execute(creating_query, Map.of("id",id)
+                                            );
+            Stream<CreateResult> streamout = query_result.stream()
+                                                         .map(x->new CreateResult(x.get("n").toString(),
+                                                                                                    null)
+                                                              );
             tx.commit();
 
             log.info(String.format("New Row with id: %s was created ! ",
                     id));
 
-            return Stream.of(new CreateResult("ok"));
+            return streamout;
 
         } catch (Exception e) {
 
             log.error("Error creating Row:" + e.getMessage());
 
-            return Stream.of(new CreateResult("ko" + e.getMessage()));
+            return Stream.of(new CreateResult("ko" + e.getMessage(), null));
         }
     }
 
@@ -68,35 +72,43 @@ public class CreateOutputsRow {
                                          MATCH (n1:Neuron {{id: $from_id,type:'output'}})
                                          MATCH (n2:Row {{id: $to_id,type:'outputsRow'}})
                                          CREATE (n1)-[:CONTAINS {output: $value,id:$outputbyrowid}]->(n2)
+                                         RETURN n1, n2
                                      """;
 
-            tx.execute(connexion_query, Map.of("from_id", from_id,
+            Result query_result = tx.execute(connexion_query, Map.of("from_id", from_id,
                                                "to_id", to_id,
                                                "value", value,
                                                "outputbyrowid", outputbyrowid)
-            );
+                                            );
+            Stream<CreateResult> streamout = query_result.stream()
+                                                         .map(x->new CreateResult(x.get("n1").toString(),
+                                                                                                    x.get("n2").toString()
+                                                                                                    )
+                                                              );
 
             tx.commit();
 
             log.info(String.format("New Connexion successfuly established " +
                     "from Neuron: %s to Output: %s",from_id,to_id));
 
-            return Stream.of(new CreateResult("Success :)"));
+            return streamout;
 
         } catch (Exception e) {
 
             log.error("Error creating Connexion:" + e.getMessage());
 
-            return Stream.of(new CreateResult("Failure :("));
+            return Stream.of(new CreateResult("Failure :(", null));
         }
     }
 
     public static class CreateResult {
 
-        public final String result;
+        public final String node1;
+        public final String node2;
 
-        public CreateResult(String result) {
-            this.result = result;
+        public CreateResult(String node1, String node2) {
+            this.node1 = node1;
+            this.node2 = node2;
         }
     }
 

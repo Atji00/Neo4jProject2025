@@ -39,13 +39,17 @@ public class ComputeLoss {
                                     -actual * LOG(predicted + epsilon) - (1 - actual) * LOG(1 - predicted + epsilon)
                                 ) AS loss
                            """;
-            tx.execute(query);
+            Result query_result = tx.execute(query);
+            Stream<CreateResult> streamout = query_result.stream()
+                                                         .map(x->new CreateResult(x.get("loss").toString()
+                                                                                                    )
+                                                             );
 
             tx.commit();
 
             log.info("Classification computed successfully !");
 
-            return Stream.of(new CreateResult("Success :)"));
+            return streamout;
 
         } catch (Exception e) {
 
@@ -70,14 +74,18 @@ public class ComputeLoss {
                                      COALESCE(outputsValues_R.output, 0) AS predicted,
                                      COALESCE(outputsValues_R.expected_output, 0) AS actual
                                 RETURN AVG((predicted - actual)^2) AS loss
-                    """;
-            tx.execute(query);
+                           """;
+            Result query_result = tx.execute(query);
 
+            Stream<CreateResult> streamout = query_result.stream()
+                                                         .map(x-> new CreateResult(x.get("loss").toString()
+                                                                                                    )
+                                                             );
             tx.commit();
 
             log.info("Regression computed successfully !");
 
-            return Stream.of(new CreateResult("Success :)"));
+            return streamout;
 
         } catch (Exception e) {
 
