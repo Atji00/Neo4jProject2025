@@ -10,6 +10,7 @@ import numpy as np
 import json
 import time
 import logging
+import gc
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -64,13 +65,13 @@ class NeuralNetworkManager:
 
                 # Create the neuron in the database with a unique id per row
                 # Exemple de base à lire completer corriger
+               # tx.run("""
+                #   call nn.createNeuron($id,$type,$layer,$activation_function)
+                #""", id=f"{layer_index}-{neuron_index}", layer=layer_index, type=layer_type,
+                 #      activation_function=activation_function)
+                gc.collect()
                 tx.run("""
-                    call nn.createNeuron($id,$type,$layer,$activation_function)
-                """, id=f"{layer_index}-{neuron_index}", layer=layer_index, type=layer_type,
-                       activation_function=activation_function)
-
-                '''tx.run("""
-                    'CREATE (n:Neuron {
+                    CREATE (n:Neuron {
                         id: $id,
                         layer: $layer,
                         type: $type,
@@ -81,7 +82,7 @@ class NeuralNetworkManager:
                         activation_function: $activation_function
                     })
                 """, id=f"{layer_index}-{neuron_index}", layer=layer_index, type=layer_type,
-                       activation_function=activation_function)'''
+                       activation_function=activation_function)
 
         # Create connections between layers for the current row
         for layer_index in range(len(network_structure) - 1):
@@ -93,6 +94,7 @@ class NeuralNetworkManager:
                         -math.sqrt(6) / math.sqrt(num_neurons_current + num_neurons_next),
                         math.sqrt(6) / math.sqrt(num_neurons_current + num_neurons_next)
                     )
+                    gc.collect()
                     tx.run("""
                         MATCH (n1:Neuron {id: $from_id})
                         MATCH (n2:Neuron {id: $to_id})
@@ -106,6 +108,7 @@ class NeuralNetworkManager:
     @staticmethod
     def create_inputs_row_node(tx, network_structure, batch_size):
         for _index in range(batch_size):
+            gc.collect()
             tx.run("""
                 CREATE (n:Row {
                     id: $id,
@@ -120,7 +123,7 @@ class NeuralNetworkManager:
                     MATCH (n2:Neuron {{id: $to_id,type:'input'}})
                     CREATE (n1)-[:CONTAINS {{output: $value,id:$inputfeatureid}}]->(n2)
                 """
-
+                gc.collect()
                 tx.run(query, from_id=f"{row_index}",
                        to_id=f"{layer_index}-{neuron_index}",
                        inputfeatureid=f"{row_index}_{neuron_index}",
@@ -144,7 +147,7 @@ class NeuralNetworkManager:
                        MATCH (n2:Row {{id: $to_id,type:'outputsRow'}})
                        CREATE (n1)-[:CONTAINS {{output: $value,id:$outputbyrowid}}]->(n2)
                    """
-
+                gc.collect()
                 tx.run(query, from_id=f"{layer_index}-{neuron_index}",
                        to_id=f"{row_index}", outputbyrowid=f"{row_index}_{neuron_index}",
                        value=0)
@@ -160,6 +163,7 @@ class NeuralNetworkManager:
             [r2:CONNECTED_TO]->
             (output:Neuron {type: 'output'})-[outputsValues_R:CONTAINS]->
             (row_for_outputs:Row {type:'outputsRow'})'''
+        gc.collect()
         tx.run("""
         
             MATCH (row_for_inputs:Row {type: 'inputsRow'})-[inputsValue_R:CONTAINS]->(input:Neuron {type: 'input'})
@@ -209,6 +213,7 @@ class NeuralNetworkManager:
     @staticmethod
     def backward_pass_adam(tx, learning_rate, beta1, beta2, epsilon, t):
         # Step 1: Update output layer
+        gc.collect()
         tx.run("""
             MATCH (output:Neuron {type: 'output'})<-[r:CONNECTED_TO]-(prev:Neuron)
             MATCH (output)-[outputsValues_R:CONTAINS]->(row_for_outputs:Row {type: 'outputsRow'})
@@ -233,6 +238,7 @@ class NeuralNetworkManager:
         """, learning_rate=learning_rate, beta1=beta1, beta2=beta2, epsilon=epsilon, t=t)
 
         # Step 2: Update hidden layers
+        gc.collect()
         tx.run("""
             MATCH (n:Neuron {type: 'hidden'})<-[:CONNECTED_TO]-(next:Neuron)
             WITH n, next, $t AS t
@@ -264,6 +270,7 @@ class NeuralNetworkManager:
             WITH DISTINCT output,r,prev,outputsValues_R,row_for_outputs'''
         if task_type == "classification":
             # Cross-Entropy Loss for classification
+            gc.collect()
             result = tx.run("""
                     MATCH (output:Neuron {type: 'output'})
                     MATCH (output)-[outputsValues_R:CONTAINS]->(row_for_outputs:Row {type: 'outputsRow'})
@@ -277,6 +284,7 @@ class NeuralNetworkManager:
                 """)
         elif task_type == "regression":
             # Mean Squared Error (MSE) for regression
+            gc.collect()
             result = tx.run("""
                     MATCH (output:Neuron {type: 'output'})
                     MATCH (output)-[outputsValues_R:CONTAINS]->(row_for_outputs:Row {type: 'outputsRow'})
@@ -291,10 +299,12 @@ class NeuralNetworkManager:
 
     @staticmethod
     def initialize_adam_parameters(tx):
+        gc.collect()
         tx.run("""
                 MATCH ()-[r:CONNECTED_TO]->()
                 SET r.m = 0.0, r.v = 0.0
             """)
+        gc.collect()
         tx.run("""
                 MATCH (n:Neuron)
                 SET n.m_bias = 0.0, n.v_bias = 0.0
@@ -302,6 +312,7 @@ class NeuralNetworkManager:
 
     @staticmethod
     def constrain_weights(tx):
+        gc.collect()
         tx.run("""
                 MATCH ()-[r:CONNECTED_TO]->()
                 SET r.weight = CASE 
@@ -313,6 +324,7 @@ class NeuralNetworkManager:
 
     @staticmethod
     def evaluate_model(tx):
+        gc.collect()
         result = tx.run("""
             MATCH (n:Neuron {type: 'output'})
             RETURN n.id AS id, n.output AS predicted
@@ -321,6 +333,7 @@ class NeuralNetworkManager:
 
     @staticmethod
     def expected_output(tx):
+        gc.collect()
         result = tx.run("""
                 MATCH (n:Neuron {type: 'output'})
                 RETURN n.id AS id, n.expected_output AS expected
@@ -365,6 +378,7 @@ class NeuralNetworkManager:
                 MATCH (row:Row {{type:'inputsRow', id: $rowid}})-[r:CONTAINS {{ id: $inputfeatureid}}]->(inputs:Neuron {{type:'input', id: $inputneuronid}})
                 SET r.output = $value
                 """
+                gc.collect()
                 tx.run(query, rowid=f"{row_index}",inputfeatureid=f"{row_index}_{i}",
                        inputneuronid=f"0-{i}", value=value)
                 #Old version
@@ -383,8 +397,10 @@ class NeuralNetworkManager:
                                MATCH(:Neuron {{type:'output', id: $outputneuronid}})-[r:CONTAINS {{ id: $predictedoutputid}}]->(row:Row {{type:'outputsRow', id: $rowid}})
                                SET r.expected_output = $value
                                """
+                gc.collect()
                 tx.run(query, rowid=f"{row_index}", predictedoutputid=f"{row_index}_0",
                        outputneuronid=f"{output_layer_index}-0", value=value)
+                gc.collect()
                 '''tx.run("""
                             MATCH (n:Neuron {id: $id})
                             SET n.expected_output = $value
@@ -622,7 +638,7 @@ if __name__ == "__main__":
     # Initialize database manager and neural network manager
     uri = "bolt://localhost:7687"
     username = "neo4j"
-    password = ""
+    password = "Oumaratji2004!"
     database = "neuralnetwork"
 
     db_manager = Neo4jDatabaseManager(uri, username, password, database)
@@ -631,26 +647,27 @@ if __name__ == "__main__":
     try:
         # Training Parameters
 
-        network_structure = [108, 10, 1]
+        network_structure = [15, 8, 1]
         hidden_activation = "tanh" # tanh,relu
         output_activation = "tanh"  #Softmax Or "sigmoid" for binary classification
         task_type = "regression" #Regression or classification
 
-        epochs = 500
-        learning_rate = 0.0005
+        epochs = 10
+        learning_rate = 0.005
         beta1 = 0.9
         beta2 = 0.999
         epsilon = 1e-8
-        batch_size=121
+        batch_size=5
 
         # Generate 1000 test cases
-        file_path = Path("test_cases.json")
+        path  = r"C:\Users\pc\Downloads\SORBONNE DATA ANALYTICS\Neo4jProjet2025\projet-final-promotion-2024-2025\test_cases.json"
+        file_path = Path(path)
         if not file_path.exists():
             #_data = generate_test_cases(1000, len(network_structure)-1)
             test_cases = generate_test_cases_from_csv(csv_file_path, input_columns, output_columns, len(network_structure)-1)
             print(test_cases[0])
 
-        with open("test_cases.json", "r") as json_file:
+        with open(path, "r") as json_file:
             test_cases = json.load(json_file)
         train_data, test_data, val_data = split_data(test_cases)
         # Step 1: Initialize

@@ -21,7 +21,7 @@ public class CreateNeuron {
     @Procedure(name = "nn.createNeuron",mode = Mode.WRITE)
     @Description("")
     public Stream<CreateResult> createNeuron(@Name("id") String id,
-                                             @Name("layer") String layer,
+                                             @Name("layer") Long layer,
                                              @Name("type") String type,
                                              @Name("activation_function") String activation_function) {
 
